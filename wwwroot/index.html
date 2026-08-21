@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Josephites</title>
+  
+  <!-- PWA & iOS / Android Mobile Settings -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Josephites">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/app.css">
+  
+  <!-- Global Realtime Cloud MQTT Broker Client -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+</head>
+<body>
+
+  <!-- ========================================================
+       CINEMATIC INTRO VIDEO / ANIMATION SPLASH
+       ======================================================== -->
+  <div id="introOverlay" class="intro-overlay">
+    <div class="intro-media-container">
+      <img src="/images/campus.png" alt="St. Joseph's Campus" class="intro-bg-img" id="introImg">
+      <div class="intro-gradient-veil"></div>
+    </div>
+    <div class="intro-content">
+      <div class="intro-badge">✨ St. Joseph's Community</div>
+      <h1 class="intro-title">JOSEPHITES</h1>
+      <p class="intro-subtitle">Real-Time Multi-Platform Messaging Network for iPhone & Android</p>
+      <button class="intro-enter-btn" onclick="dismissIntro()">Enter Community ➔</button>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       DISCRETE AUTHENTICATION POP-OUT MODAL
+       ======================================================== -->
+  <div id="authModalBackdrop" class="modal-backdrop hidden">
+    <div class="auth-modal">
+      <div style="font-size: 38px; margin-bottom: 8px;">🎓</div>
+      <h3>Welcome to Josephites</h3>
+      <p>Enter your details to join the chatroom</p>
+      
+      <div class="auth-input-group">
+        <label for="inputUsername">Your Display Name</label>
+        <input type="text" id="inputUsername" class="auth-input" placeholder="e.g. Alex" autocomplete="name">
+      </div>
+
+      <div class="auth-input-group">
+        <label for="inputPasscode">Passcode</label>
+        <input type="password" id="inputPasscode" class="auth-input" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <div id="authError" class="auth-error"></div>
+
+      <button class="auth-submit-btn" onclick="submitAuth()">Enter Network ➔</button>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       ADMIN CONTROL CENTER MODAL (Visible only to Admin)
+       ======================================================== -->
+  <div id="adminModalBackdrop" class="modal-backdrop hidden" onclick="if(event.target === this) toggleAdminModal()">
+    <div class="auth-modal" style="max-width: 440px; text-align: left; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 18px; color: var(--accent-admin);">⚙️ Admin Command Center</h3>
+        <button class="icon-btn" onclick="toggleAdminModal()">✕</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        
+        <!-- Create Channel -->
+        <div style="background: var(--bg-input); padding: 14px; border-radius: 14px; border: 1px solid var(--border);">
+          <div style="font-weight: 700; font-size: 13px; color: var(--accent-admin); margin-bottom: 8px;">➕ Create New Channel</div>
+          <input type="text" id="newChanName" class="auth-input" placeholder="Channel name (e.g. sports, campus-news)" style="margin-bottom: 6px; padding: 8px 12px; font-size: 13px;">
+          <input type="text" id="newChanTopic" class="auth-input" placeholder="Topic description" style="margin-bottom: 8px; padding: 8px 12px; font-size: 13px;">
+          <button class="auth-submit-btn" style="padding: 10px; font-size: 13px;" onclick="adminCreateChannel()">Create Channel</button>
+        </div>
+
+        <!-- Publish Campus Event -->
+        <div style="background: var(--bg-input); padding: 14px; border-radius: 14px; border: 1px solid var(--border);">
+          <div style="font-weight: 700; font-size: 13px; color: var(--secondary); margin-bottom: 8px;">📢 Broadcast Official Event</div>
+          <input type="text" id="eventTitle" class="auth-input" placeholder="Event Title (e.g. Annual College Fest)" style="margin-bottom: 6px; padding: 8px 12px; font-size: 13px;">
+          <input type="text" id="eventDesc" class="auth-input" placeholder="Date, Time & Details" style="margin-bottom: 8px; padding: 8px 12px; font-size: 13px;">
+          <button class="auth-submit-btn" style="padding: 10px; font-size: 13px; background: var(--secondary);" onclick="adminPublishEvent()">Broadcast Pinned Banner</button>
+        </div>
+
+        <!-- Create Campus Poll -->
+        <div style="background: var(--bg-input); padding: 14px; border-radius: 14px; border: 1px solid var(--border);">
+          <div style="font-weight: 700; font-size: 13px; color: #a78bfa; margin-bottom: 8px;">📊 Launch Community Poll</div>
+          <input type="text" id="pollQuestion" class="auth-input" placeholder="Question (e.g. Favorite event?)" style="margin-bottom: 6px; padding: 8px 12px; font-size: 13px;">
+          <input type="text" id="pollOptions" class="auth-input" placeholder="Options comma-separated (e.g. Music, Drama, Coding)" style="margin-bottom: 8px; padding: 8px 12px; font-size: 13px;">
+          <button class="auth-submit-btn" style="padding: 10px; font-size: 13px; background: #8b5cf6;" onclick="adminCreatePoll()">Launch Poll</button>
+        </div>
+
+        <!-- Block / Moderate User -->
+        <div style="background: var(--bg-input); padding: 14px; border-radius: 14px; border: 1px solid var(--border);">
+          <div style="font-weight: 700; font-size: 13px; color: #ef4444; margin-bottom: 8px;">🚫 Moderate / Block Member</div>
+          <input type="text" id="blockUserName" class="auth-input" placeholder="Username to block/mute" style="margin-bottom: 8px; padding: 8px 12px; font-size: 13px;">
+          <div style="display: flex; gap: 8px;">
+            <button class="auth-submit-btn" style="padding: 10px; font-size: 13px; background: #ef4444; margin-top: 0;" onclick="adminBlockUser(true)">Block User</button>
+            <button class="auth-submit-btn" style="padding: 10px; font-size: 13px; background: var(--online); margin-top: 0;" onclick="adminBlockUser(false)">Unblock</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MAIN APP SHELL
+       ======================================================== -->
+  <div id="app">
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Navigation Drawer / Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <!-- User Profile Header -->
+      <div class="user-profile-header">
+        <div class="avatar" id="userAvatar" onclick="reauth()" style="cursor: pointer;" title="Tap to switch profile">J<div class="status-dot"></div></div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="profileName">Josephite (You)</div>
+          <div style="font-size: 11px; color: var(--online);" id="cloudSyncStatus">🟢 Global Cloud Synced</div>
+        </div>
+      </div>
+
+      <div class="list-container">
+        <!-- Channels Section -->
+        <div class="section-title">
+          <span>Channels</span>
+          <span id="adminAddChannelBtn" style="display: none; cursor: pointer; color: var(--accent-admin);" onclick="toggleAdminModal()">➕</span>
+        </div>
+        <div id="channelsList"></div>
+
+        <!-- Members Joined Section -->
+        <div class="section-title" style="margin-top: 14px;">
+          <span>Members Joined (<span id="memberCount">0</span>)</span>
+        </div>
+        <div id="membersList"></div>
+
+        <!-- Direct Messages Section -->
+        <div class="section-title" style="margin-top: 14px;">
+          <span>Direct Messages</span>
+        </div>
+        <div id="usersList"></div>
+      </div>
+
+      <!-- Drawer Bottom Status & Admin Tools -->
+      <div style="padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+        <span>Josephites v2.5</span>
+        <div style="display: flex; gap: 6px;">
+          <button id="adminConsoleBtn" onclick="toggleAdminModal()" style="display: none; background: var(--accent-admin); color: #000; border: none; padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 11px; cursor: pointer;">⚙️ Admin</button>
+          <button onclick="reauth()" style="background: var(--bg-surface-elevated); color: var(--text-primary); border: 1px solid var(--border-light); padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; cursor: pointer;">Switch</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat View -->
+    <main class="chat-main">
+      <!-- Toolbar -->
+      <header class="toolbar">
+        <div class="toolbar-left">
+          <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+          <div class="channel-info">
+            <h2 id="channelTitle">#general</h2>
+            <p id="channelTopic">Josephites Community Hub</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span id="liveStatusBadge" style="font-size: 11px; background: rgba(16, 185, 129, 0.2); color: var(--online); padding: 3px 8px; border-radius: 12px; font-weight: 600;">⚡ Live Sync</span>
+          <button id="adminHeaderBtn" style="display: none;" class="admin-action-btn" onclick="toggleAdminModal()">⚙️ Admin</button>
+          <button class="icon-btn" onclick="selectUser('u_josephite_ai', 'Josephite AI')" title="Josephite AI">🤖</button>
+        </div>
+      </header>
+
+      <!-- Pinned Event Banner (if any) -->
+      <div id="eventBannerContainer"></div>
+
+      <!-- Messages Stream -->
+      <div id="messagesContainer" class="messages-container"></div>
+
+      <!-- Voice Recording Float -->
+      <div id="recordingBar" class="recording-bar hidden">
+        <span id="recordingTimer">Recording 0:00</span>
+        <div style="display: flex; gap: 8px;">
+          <button style="background: none; border: none; color: #fff; font-weight: 700; cursor: pointer;" onclick="cancelVoiceRecording()">Cancel</button>
+          <button style="background: #fff; border: none; color: #ef4444; font-weight: 700; border-radius: 12px; padding: 4px 10px; cursor: pointer;" onclick="stopVoiceRecording()">Send 🎙️</button>
+        </div>
+      </div>
+
+      <!-- Bottom Chat Input Bar -->
+      <footer class="input-bar">
+        <!-- Hidden Photo Upload Input -->
+        <input type="file" id="imageUploadInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+        
+        <button class="icon-btn" onclick="document.getElementById('imageUploadInput').click()" title="Attach Photo">📷</button>
+        <button class="icon-btn" onclick="showEmojiPicker()" title="Emoji">😀</button>
+        <div class="input-pill">
+          <input type="text" id="messageInput" placeholder="Message Josephites or mention @josephite..." autocomplete="off">
+        </div>
+        <button class="icon-btn" id="micBtn" onclick="startVoiceRecording()" title="Record Voice Note">🎙️</button>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">➤</button>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
