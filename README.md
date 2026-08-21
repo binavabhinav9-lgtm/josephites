@@ -5,7 +5,7 @@ Real-Time Multi-Platform Community Network & Messaging Web App for St. Joseph's.
 ## ✨ Features
 - 🎬 **Cinematic Dynamic Entrance**: Interactive HTML5 particle canvas, 3D parallax tilt, and ambient welcome chords.
 - 🔒 **Discrete Passcode Authentication**:
-  - `STJOSEPH`: Normal User (full chat, voice notes, photo sharing, polls, online member list).
+  - `ONLY TO HOSTEL SSTUDENTS`: Normal User (full chat, voice notes, photo sharing, polls, online member list).
   - `EEFEFEFE`: Admin User (channel management, official event broadcasts, community polls, member moderation).
 - ⚡ **Global Real-Time Cloud Sync**: Sub-50ms message sync powered by global SSL WebSockets.
 - 📜 **Shared Message History**: Anyone who joins can view past chat messages, polls, and announcements.
